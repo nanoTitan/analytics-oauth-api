@@ -6,7 +6,7 @@ import (
 	"github.com/gocql/gocql"
 
 	"github.com/nanoTitan/analytics-oauth-api/src/clients/cassandra"
-	"github.com/nanoTitan/analytics-oauth-api/src/domain/accesstoken"
+	"github.com/nanoTitan/analytics-oauth-api/src/domain/atdomain"
 	"github.com/nanoTitan/analytics-oauth-api/src/utils/errors"
 )
 
@@ -23,24 +23,18 @@ func New() Repository {
 
 // Repository - interface to interact with dbRepository objects
 type Repository interface {
-	GetByID(string) (*accesstoken.AccessToken, *errors.RestErr)
-	Create(accesstoken.AccessToken) *errors.RestErr
-	UpdateExpirationTime(accesstoken.AccessToken) *errors.RestErr
+	GetByID(string) (*atdomain.AccessToken, *errors.RestErr)
+	Create(atdomain.AccessToken) *errors.RestErr
+	UpdateExpirationTime(atdomain.AccessToken) *errors.RestErr
 }
 
 type dbRepository struct {
 }
 
 // GetById - Get an access token from the db given an Id
-func (r *dbRepository) GetByID(id string) (*accesstoken.AccessToken, *errors.RestErr) {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return nil, errors.NewInternalServerError(err.Error())
-	}
-	defer session.Close()
-
-	var result accesstoken.AccessToken
-	if err := session.Query(queryGetAccessToken, id).Scan(
+func (r *dbRepository) GetByID(id string) (*atdomain.AccessToken, *errors.RestErr) {
+	var result atdomain.AccessToken
+	if err := cassandra.GetSession().Query(queryGetAccessToken, id).Scan(
 		&result.AccessToken,
 		&result.UserID,
 		&result.ClientID,
@@ -56,14 +50,8 @@ func (r *dbRepository) GetByID(id string) (*accesstoken.AccessToken, *errors.Res
 	return &result, nil
 }
 
-func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInternalServerError(err.Error())
-	}
-	defer session.Close()
-
-	if err := session.Query(
+func (r *dbRepository) Create(at atdomain.AccessToken) *errors.RestErr {
+	if err := cassandra.GetSession().Query(
 		queryCreateAccessToken,
 		at.AccessToken,
 		at.UserID,
@@ -76,14 +64,8 @@ func (r *dbRepository) Create(at accesstoken.AccessToken) *errors.RestErr {
 	return nil
 }
 
-func (r *dbRepository) UpdateExpirationTime(at accesstoken.AccessToken) *errors.RestErr {
-	session, err := cassandra.GetSession()
-	if err != nil {
-		return errors.NewInternalServerError(err.Error())
-	}
-	defer session.Close()
-
-	if err := session.Query(
+func (r *dbRepository) UpdateExpirationTime(at atdomain.AccessToken) *errors.RestErr {
+	if err := cassandra.GetSession().Query(
 		queryUpdateExpires,
 		at.Expires,
 		at.AccessToken,

@@ -2,10 +2,10 @@ package app
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/nanoTitan/analytics-oauth-api/src/clients/cassandra"
-	"github.com/nanoTitan/analytics-oauth-api/src/domain/accesstoken"
 	"github.com/nanoTitan/analytics-oauth-api/src/http"
 	"github.com/nanoTitan/analytics-oauth-api/src/repository/db"
+	"github.com/nanoTitan/analytics-oauth-api/src/repository/rest"
+	"github.com/nanoTitan/analytics-oauth-api/src/services/accesstoken"
 )
 
 var (
@@ -14,13 +14,8 @@ var (
 
 // StartApplication - start of the OAuth application
 func StartApplication() {
-	session, dbErr := cassandra.GetSession()
-	if dbErr != nil {
-		panic(dbErr)
-	}
-	session.Close()
-
-	atHandler := http.NewHandler(accesstoken.NewService(db.New()))
+	atHandler := http.NewAccessTokenHandler(
+		accesstoken.NewService(rest.NewRepository(), db.New()))
 
 	router.GET("/oauth/access_token/:access_token_id", atHandler.GetByID)
 	router.POST("/oauth/access_token", atHandler.Create)

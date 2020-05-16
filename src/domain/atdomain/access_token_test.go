@@ -1,4 +1,4 @@
-package accesstoken
+package atdomain
 
 import (
 	"testing"

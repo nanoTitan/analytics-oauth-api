@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nanoTitan/analytics-oauth-api/src/domain/accesstoken"
+	"github.com/nanoTitan/analytics-oauth-api/src/domain/atdomain"
+	"github.com/nanoTitan/analytics-oauth-api/src/services/accesstoken"
 	"github.com/nanoTitan/analytics-oauth-api/src/utils/errors"
 )
 
@@ -19,17 +20,18 @@ type accessTokenHandler struct {
 	service accesstoken.Service
 }
 
-// NewHandler - get a new accessTokenHandler object
-func NewHandler(service accesstoken.Service) AccessTokenHandler {
+// NewAccessTokenHandler - get a new accessTokenHandler object
+func NewAccessTokenHandler(service accesstoken.Service) AccessTokenHandler {
 	return &accessTokenHandler{
 		service: service,
 	}
 }
 
-func (h *accessTokenHandler) GetByID(c *gin.Context) {
+// GetByID - create an http request to get an existing access token by user ID
+func (handler *accessTokenHandler) GetByID(c *gin.Context) {
 	accessTokenID := strings.TrimSpace(c.Param("access_token_id"))
 
-	accessToken, err := h.service.GetByID(accessTokenID)
+	accessToken, err := handler.service.GetByID(accessTokenID)
 	if err != nil {
 		c.JSON(err.Status, err)
 		return
@@ -37,16 +39,19 @@ func (h *accessTokenHandler) GetByID(c *gin.Context) {
 	c.JSON(http.StatusOK, accessToken)
 }
 
-func (h *accessTokenHandler) Create(c *gin.Context) {
-	var at accesstoken.AccessToken
-	if err := c.ShouldBindJSON(&at); err != nil {
+// Create - Creates an http request for new access token
+func (handler *accessTokenHandler) Create(c *gin.Context) {
+	var request atdomain.AccessTokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
 		restErr := errors.NewBadRequestError("invalid json body")
 		c.JSON(restErr.Status, restErr)
 		return
 	}
 
-	if err := h.service.Create(at); err != nil {
+	accessToken, err := handler.service.Create(request)
+	if err != nil {
 		c.JSON(err.Status, err)
+		return
 	}
-	c.JSON(http.StatusCreated, at)
+	c.JSON(http.StatusCreated, accessToken)
 }
